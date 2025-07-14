@@ -1,0 +1,5 @@
+# Ignore root node_modules
+node_modules/
+
+# Ignore node_modules in all subfolders (like your 3 frontend apps)
+**/node_modules/
