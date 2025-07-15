@@ -35,6 +35,7 @@ class User(AbstractUser):
     """Custom user model that uses email as the primary identifier"""
     username = None
     email = models.EmailField(_('email address'), unique=True)
+    full_name = models.CharField(max_length=255)
     
     # Add these to resolve the reverse accessor conflicts
     groups = models.ManyToManyField(
@@ -89,12 +90,6 @@ class User(AbstractUser):
 
 class CompanyProfile(models.Model):
     """Extended profile for insurance companies"""
-    user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        related_name='company_profile',
-        limit_choices_to={'user_type': 'company'}
-    )
     
     COMPANY_TYPE_CHOICES = (
         ('insurance_provider', 'Insurance Provider'),
@@ -104,9 +99,10 @@ class CompanyProfile(models.Model):
         ('other', 'Other'),
     )
     
-    company_name = models.CharField(max_length=255)
-    contact_person = models.CharField(max_length=255)
-    contact_phonenumber = models.CharField(max_length=20)
+    company_legal_name = models.CharField(max_length=255)
+    company_email=models.EmailField( max_length=254)
+    primary_contact_person_name =  models.CharField(max_length=255)
+    company_phone_number = models.CharField(max_length=50)  
     company_website = models.URLField(max_length=255, blank=True, null=True)
     company_type = models.CharField(
         max_length=20,
@@ -114,9 +110,12 @@ class CompanyProfile(models.Model):
     )
     company_registration_number = models.CharField(max_length=100)
     year_founded = models.CharField(max_length=10)
-    tax_identification_number = models.CharField(max_length=100)
-    insurance_license_number = models.CharField(max_length=100)
-    regulatory_body = models.CharField(max_length=255)
+    tax_insurance_number = models.CharField(max_length=100)
+    insurace_licese_number = models.CharField(max_length=100)
+    year_founded = models.DateField()
+    primary_regulatory_body = models.CharField(max_length=255)
+    password = models.CharField(max_length=255)
+    
     
     EMPLOYEES_RANGE_CHOICES = (
         ('1-10', '1-10'),
@@ -126,15 +125,14 @@ class CompanyProfile(models.Model):
         ('501-1000', '501-1000'),
         ('1000+', '1000+'),
     )
-    employees_range = models.CharField(
+    number_of_employees_range = models.CharField(
         max_length=10,
         choices=EMPLOYEES_RANGE_CHOICES
     )
-    country = models.CharField(max_length=100)
+    country_of_operation = models.CharField(max_length=100)
     company_address = models.TextField()
     company_description = models.TextField()
-    company_code = models.CharField()
-    
+    # company_code = models.CharField()
     # Additional fields for tracking
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
