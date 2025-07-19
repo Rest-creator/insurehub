@@ -1,0 +1,89 @@
+name: WebApp CI + PR Auto-Merge
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  test-and-pr:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: your_db_name
+          POSTGRES_USER: your_db_user
+          POSTGRES_PASSWORD: your_db_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: your_project.settings
+      DATABASE_URL: postgres://your_db_user:your_db_password@localhost:5432/your_db_name
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      ### 🟨 React Tests
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend  # adjust if your React folder is named differently
+          npm install
+
+      - name: Run React tests
+        run: |
+          cd frontend
+          npm test -- --watchAll=false
+
+      ### 🟩 Django Tests
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend  # adjust if your Django code lives elsewhere
+          pip install -r requirements.txt
+
+      - name: Run Django tests
+        run: |
+          cd backend
+          python manage.py test  # or `pytest` if you're using that
+
+      ### 🛠 Create or update PR
+      - name: Create or update pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Auto PR: ${{ github.ref_name }} → main"
+          body: |
+            Auto-generated PR from `${{ github.ref_name }}`
+          base: main
+          branch: ${{ github.ref_name }}
+          draft: false
+
+  enable-auto-merge:
+    needs: test-and-pr
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Enable auto-merge
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-title: "Auto PR: ${{ github.ref_name }} → main"
+          merge-method: squash  # or "merge" or "rebase"
