@@ -1,13 +1,27 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
-import { Building, Mail, Lock, Eye, EyeOff, Check, Loader, User, Phone, Globe, FileText, Landmark } from "lucide-react";
+import {
+  Building,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Check,
+  Loader,
+  User,
+  Phone,
+  Globe,
+  FileText,
+  Landmark,
+} from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import Container from "../components/ui/Container";
 import FadeIn from "../components/animations/FadeIn";
 import Server from "@/components/server/Server";
 import { toast } from "sonner";
+import { IndexedDB } from "../constants/indexedDB"; // Ensure this path is correct
 
 const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -35,13 +49,18 @@ const SignUp = () => {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value, type } = e.target;
-    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
-    
-    setFormData(prev => ({
+    const checked =
+      type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -53,10 +72,10 @@ const SignUp = () => {
     setStep(step - 1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
@@ -67,29 +86,41 @@ const SignUp = () => {
     // Prepare submission data
     const submissionData = {
       ...formData,
-      status: "pending_review" // Set initial status
+      status: "pending_review", // Set initial status
+      // Add a timestamp for when it was registered
+      registeredAt: new Date().toISOString(),
     };
 
-    console.log(submissionData);
-    
+    console.log(
+      "Attempting to save company registration to IndexedDB:",
+      submissionData
+    );
 
-    Server.signup(submissionData)
-      .then((response) => {
-        console.log("Company registration submitted:", response.data);
-        toast.success(
-          "Your company registration has been submitted for review. We'll contact you once your application is approved."
-        );
-        setTimeout(() => {
-          navigate("/");
-        }, 3000);
-      })
-      .catch((error) => {
-        console.error("Error submitting company registration:", error);
-        toast.error("An error occurred while submitting your registration.");
-      })
-      .finally(() => {
+    try {
+      // Check if a company with this email already exists
+      const existingCompany = await IndexedDB.getCompanyRegistration(
+        submissionData.companyEmail
+      );
+      if (existingCompany) {
         setLoading(false);
-      });
+        toast.error("A company with this email is already registered.");
+        return;
+      }
+
+      await IndexedDB.addCompanyRegistration(submissionData);
+      console.log("Company registration saved to IndexedDB.");
+      toast.success(
+        "Your company registration has been submitted and saved locally for review. We'll contact you once your application is approved."
+      );
+      setTimeout(() => {
+        navigate("/"); // Navigate to home or a success page
+      }, 3000);
+    } catch (error) {
+      console.error("Error saving company registration to IndexedDB:", error);
+      toast.error("An error occurred while saving your registration locally.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -114,7 +145,8 @@ const SignUp = () => {
                     Company Registration
                   </h1>
                   <p className="text-gray-600">
-                    Complete this form to register your insurance company for platform access
+                    Complete this form to register your insurance company for
+                    platform access
                   </p>
                   <div className="mt-4 flex justify-center">
                     <div className="flex items-center">
@@ -153,7 +185,7 @@ const SignUp = () => {
                         <h2 className="text-xl font-semibold text-insurance-neutral-dark mb-4">
                           Basic Information
                         </h2>
-                        
+
                         <div>
                           <label
                             htmlFor="companyName"
@@ -290,7 +322,7 @@ const SignUp = () => {
                         <h2 className="text-xl font-semibold text-insurance-neutral-dark mb-4">
                           Legal & Regulatory Information
                         </h2>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
                             <label
@@ -308,10 +340,16 @@ const SignUp = () => {
                               onChange={handleChange}
                             >
                               <option value="">Select company type</option>
-                              <option value="insurance_provider">Insurance Provider</option>
+                              <option value="insurance_provider">
+                                Insurance Provider
+                              </option>
                               <option value="broker">Broker</option>
-                              <option value="reinsurance">Reinsurance Company</option>
-                              <option value="mga">MGA (Managing General Agent)</option>
+                              <option value="reinsurance">
+                                Reinsurance Company
+                              </option>
+                              <option value="mga">
+                                MGA (Managing General Agent)
+                              </option>
                               <option value="other">Other</option>
                             </select>
                           </div>
@@ -452,7 +490,7 @@ const SignUp = () => {
                         <h2 className="text-xl font-semibold text-insurance-neutral-dark mb-4">
                           Additional Information & Account Setup
                         </h2>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
                             <label
@@ -538,7 +576,7 @@ const SignUp = () => {
                           <h3 className="text-lg font-medium text-insurance-neutral-dark">
                             Account Credentials
                           </h3>
-                          
+
                           <div>
                             <label
                               htmlFor="password"
@@ -617,7 +655,9 @@ const SignUp = () => {
                               </div>
                               <div className="flex items-center text-sm">
                                 <Check className="h-4 w-4 text-insurance-green-dark mr-2" />
-                                <span className="text-gray-600">One number</span>
+                                <span className="text-gray-600">
+                                  One number
+                                </span>
                               </div>
                               <div className="flex items-center text-sm">
                                 <Check className="h-4 w-4 text-insurance-green-dark mr-2" />
@@ -642,8 +682,12 @@ const SignUp = () => {
                             />
                           </div>
                           <div className="ml-3 text-sm">
-                            <label htmlFor="agreed_tnc" className="text-gray-600">
-                              I certify that all information provided is accurate and agree to the{" "}
+                            <label
+                              htmlFor="agreed_tnc"
+                              className="text-gray-600"
+                            >
+                              I certify that all information provided is
+                              accurate and agree to the{" "}
                               <a
                                 href="#"
                                 className="text-insurance-orange hover:text-insurance-orange-dark"

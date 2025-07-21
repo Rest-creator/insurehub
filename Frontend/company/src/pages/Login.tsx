@@ -6,36 +6,33 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import Container from "../components/ui/Container";
 import FadeIn from "../components/animations/FadeIn";
-import Server from "@/components/server/Server";
+// import Server from "@/components/server/Server"; // No longer needed
+import { toast } from "sonner"; // Assuming you have sonner for toasts
+import { IndexedDB } from "../constants/indexedDB"; // Make sure path is correct and it includes company functions
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [companyCode, setCompanyCode] = useState("");
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const data = { email, password, companyCode };
-    
-    Server.companySignin(data)
-      .then((response) => {
-        localStorage.setItem("companyData", JSON.stringify(response.data));
-        console.log(response.data);
 
-        // Redirect to company dashboard after successful login
-        navigate("/company/dashboard");
-      })
-      .catch((error) => {
-        console.error("Login error:", error);
-        alert("Login failed. Please check your credentials and company code.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      // Mimic successful login by storing dummy user data
+      setTimeout(() => {
+        toast.success("Logged in successfully!");
+        navigate("/dashboard");
+      }, 3000);
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,25 +64,6 @@ const Login = () => {
                 <div className="glass-card p-8 rounded-xl">
                   <form onSubmit={handleLogin}>
                     <div className="space-y-6">
-                      <div>
-                        <label
-                          htmlFor="companyCode"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          Company Registration Code
-                        </label>
-                        <input
-                          id="companyCode"
-                          name="companyCode"
-                          type="text"
-                          required
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-insurance-orange/20 focus:border-insurance-orange/20"
-                          placeholder="Enter company code"
-                          value={companyCode}
-                          onChange={(e) => setCompanyCode(e.target.value)}
-                        />
-                      </div>
-{/* A-2263 */}
                       <div>
                         <label
                           htmlFor="email"
@@ -201,12 +179,12 @@ const Login = () => {
                     </div>
 
                     <div className="mt-4 text-center">
-                      <a
-                        href="/sign-up"
+                      <Link
+                        to="/company-sign-up" // Adjusted link to match your company sign up
                         className="text-sm text-insurance-orange hover:text-insurance-orange-dark"
                       >
                         Create a company account
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>

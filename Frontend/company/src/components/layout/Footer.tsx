@@ -38,7 +38,7 @@ const Footer = () => {
             <p className="text-gray-500 text-sm mb-4 md:mb-0">
               © {new Date().getFullYear()} InsureHub. All rights reserved.
             </p>
-            <p className="text-gray-500 text-sm">© REST > Universe</p>
+            <p className="text-gray-500 text-sm">© RESTK Solutions</p>
             <div className="flex space-x-6">
               <Link to="/privacy-policy" className="text-sm text-gray-500 hover:text-insurance-orange transition-colors">
                 Privacy Policy

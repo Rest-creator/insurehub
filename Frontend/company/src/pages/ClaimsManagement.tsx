@@ -1,382 +1,346 @@
-import { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
-import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
-import Container from '../components/ui/Container';
-import { Dialog } from "@/components/ui/dialog";
-import { useToast } from '@/hooks/use-toast';
-import ClaimHeader from '@/components/claims/ClaimHeader';
-import ClaimStatusOverview from '@/components/claims/ClaimStatusOverview';
-import ClaimList from '@/components/claims/ClaimList';
-import FileClaimForm from '@/components/claims/FileClaimForm';
-import { NewClaimFormData } from '@/components/claims/types';
-import ClaimDetails from '@/components/claims/ClaimDetails';
-import ProcessOverview from '@/components/claims/ProcessOverview';
-import ClaimStats from '@/components/claims/ClaimStats';
-import { Claim, TimelineItem } from '@/components/claims/types';
-import Server from '@/components/server/Server';
+// src/pages/Claims.jsx
+import React, { useState } from "react";
+import { Helmet } from "react-helmet-async";
+import Navbar from "../components/layout/Navbar";
+import Footer from "../components/layout/Footer";
+import Container from "../components/ui/Container";
+import FadeIn from "../components/animations/FadeIn";
+import { Search, PlusCircle, CheckCircle, Clock, XCircle, FileText, User } from "lucide-react";
+import ClaimDetailsModal from "../components/services/ClaimDetailsModal";
 
-const ClaimsManagement = () => {
-  const [activeTab, setActiveTab] = useState("active");
-  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isNewClaimOpen, setIsNewClaimOpen] = useState(false);
-  const [claimStats, setClaimStats] = useState({})
-  const { toast } = useToast();
-  
-  const [newClaimForm, setNewClaimForm] = useState<NewClaimFormData>({
-    title: '',
-    policyType: '',
-    amount: '',
-    description: '',
-  });
-  
-  const [claims, setClaims] = useState<Claim[]>([
+const Claims = () => {
+  // State for managing claim details modal
+  const [showClaimDetailsModal, setShowClaimDetailsModal] = useState(false);
+  const [selectedClaim, setSelectedClaim] = useState(null);
+
+  const [claims, setClaims] = useState([
     {
-      id: "CLM-2023-8764",
-      title: "Auto Collision Damage",
-      date: "Apr 15, 2023",
+      id: "C-001",
+      clientName: "Rudo Moyo", // Zimbabwean Name
+      policyType: "Auto Insurance",
+      description: "Minor fender bender, rear-ended at a stop sign. Client provided photos and police report.",
+      dateFiled: "2025-07-10",
+      status: "Pending Review",
+      assignedAgent: "Jane Smith",
+      amountClaimed: "$1,500.00",
+      lastUpdated: "2025-07-15",
+      notes: "Initial review complete. Awaiting assessor's report.",
+      images: [ // Added images for Auto Insurance claim
+        "https://plus.unsplash.com/premium_photo-1751945121604-16d609f19099?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8ZGFtYWdlZCUyMGNhciUyMGFjY2lkZW50fGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1673187139211-1e7ec3dd60ec?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGRhbWFnZWQlMjBjYXIlMjBhY2NpZGVudHxlbnwwfHwwfHx8MA%3D%3D",
+      ],
+    },
+    {
+      id: "C-002",
+      clientName: "Tendai Ncube", // Zimbabwean Name
+      policyType: "Home Insurance",
+      description: "Water damage in kitchen due to burst pipe. Plumber's report submitted.",
+      dateFiled: "2025-07-08",
       status: "In Progress",
-      statusColor: "text-yellow-600",
-      statusBg: "bg-yellow-100",
-      amount: "$4,350",
-      policy: "Auto Insurance",
-      policyNumber: "AU87126534",
-      description: "Front bumper and hood damage from collision at intersection",
-      documents: 3,
-      messages: 2,
-      progress: 40,
-      nextStep: "Awaiting claims adjuster review",
-      timeline: [
-        { date: "Apr 15, 2023", event: "Claim submitted", complete: true },
-        { date: "Apr 16, 2023", event: "Documents uploaded", complete: true },
-        { date: "Apr 17, 2023", event: "Claims adjuster assigned", complete: true },
-        { date: "Pending", event: "Damage assessment", complete: false },
-        { date: "Pending", event: "Payment processing", complete: false }
-      ]
+      assignedAgent: "John Doe",
+      amountClaimed: "$8,000.00",
+      lastUpdated: "2025-07-16",
+      notes: "Assessor assigned. Waiting for site visit scheduling.",
+      images: [ // Added images for Home Insurance claim
+        "https://images.unsplash.com/photo-1657213077302-79e89564a042?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d2F0ZXIlMjBkYW1hZ2VkJTIwa2l0Y2hlbnxlbnwwfHwwfHx8MA%3D%3D",
+        
+      ],
     },
     {
-      id: "CLM-2023-7251",
-      title: "Laptop Theft Claim",
-      date: "Mar 02, 2023",
+      id: "C-003",
+      clientName: "Anesu Dube", // Zimbabwean Name
+      policyType: "Health Insurance",
+      description: "Emergency room visit for severe flu. Medical bills attached.",
+      dateFiled: "2025-07-05",
       status: "Approved",
-      statusColor: "text-green-600",
-      statusBg: "bg-green-100",
-      amount: "$1,200",
-      policy: "Personal Property",
-      policyNumber: "PP23487612",
-      description: "Laptop stolen from vehicle in parking garage",
-      documents: 4,
-      messages: 0,
-      progress: 100,
-      nextStep: "Payment processed. Claim complete.",
-      timeline: [
-        { date: "Mar 02, 2023", event: "Claim submitted", complete: true },
-        { date: "Mar 03, 2023", event: "Documents uploaded", complete: true },
-        { date: "Mar 05, 2023", event: "Claims adjuster assigned", complete: true },
-        { date: "Mar 10, 2023", event: "Claim approved", complete: true },
-        { date: "Mar 15, 2023", event: "Payment processed", complete: true }
-      ]
+      assignedAgent: "Jane Smith",
+      amountClaimed: "$1,200.00",
+      lastUpdated: "2025-07-07",
+      notes: "Claim approved, payment processed to client's bank account.",
+      images: [], // No images for health claim typically
     },
     {
-      id: "CLM-2023-6549",
-      title: "Water Damage Repair",
-      date: "Feb 18, 2023",
-      status: "Completed",
-      statusColor: "text-blue-600",
-      statusBg: "bg-blue-100",
-      amount: "$5,780",
-      policy: "Home Insurance",
-      policyNumber: "HD29578423",
-      description: "Water damage from burst pipe in upstairs bathroom",
-      documents: 6,
-      messages: 3,
-      progress: 100,
-      nextStep: "Claim resolved. Survey sent.",
-      timeline: [
-        { date: "Feb 18, 2023", event: "Claim submitted", complete: true },
-        { date: "Feb 19, 2023", event: "Documents uploaded", complete: true },
-        { date: "Feb 21, 2023", event: "Claims adjuster assigned", complete: true },
-        { date: "Feb 25, 2023", event: "Damage assessment", complete: true },
-        { date: "Mar 05, 2023", event: "Payment processed", complete: true }
-      ]
+      id: "C-004",
+      clientName: "Farai Zhou", // Zimbabwean Name
+      policyType: "Life Insurance",
+      description: "Beneficiary claim due to policyholder's passing. Death certificate provided.",
+      dateFiled: "2025-06-20",
+      status: "Rejected",
+      assignedAgent: "Peter Jones",
+      amountClaimed: "$100,000.00",
+      lastUpdated: "2025-07-01",
+      notes: "Claim rejected due to policy lapse. Notification sent to beneficiary.",
+      images: [], // No images for life claim typically
     },
     {
-      id: "CLM-2022-9823",
-      title: "Emergency Medical Visit",
-      date: "Dec 12, 2022",
-      status: "Under Review",
-      statusColor: "text-purple-600",
-      statusBg: "bg-purple-100",
-      amount: "$875",
-      policy: "Health Insurance",
-      policyNumber: "HC65437891",
-      description: "Emergency room visit for severe allergic reaction",
-      documents: 2,
-      messages: 1,
-      progress: 60,
-      nextStep: "Awaiting medical records review",
-      timeline: [
-        { date: "Dec 12, 2022", event: "Claim submitted", complete: true },
-        { date: "Dec 14, 2022", event: "Medical bills uploaded", complete: true },
-        { date: "Dec 16, 2022", event: "Claims adjuster assigned", complete: true },
-        { date: "Pending", event: "Medical review", complete: false },
-        { date: "Pending", event: "Payment processing", complete: false }
-      ]
+      id: "C-005",
+      clientName: "Nomusa Sibanda", // Zimbabwean Name
+      policyType: "Business Liability",
+      description: "Slip and fall incident at business premises. CCTV footage available.",
+      dateFiled: "2025-06-15",
+      status: "Pending Review",
+      assignedAgent: "John Doe",
+      amountClaimed: "$5,000.00",
+      lastUpdated: "2025-07-14",
+      notes: "Legal team reviewing liability. Client interview scheduled.",
+      images: [ // Added images for Business Liability claim
+        "https://via.placeholder.com/300/5733FF/FFFFFF?text=Slip+Fall+1",
+        "https://via.placeholder.com/300/3900C7/FFFFFF?text=Slip+Fall+2",
+      ],
     },
     {
-      id: "CLM-2022-8975",
-      title: "Storm Roof Damage",
-      date: "Nov 05, 2022",
-      status: "Denied",
-      statusColor: "text-red-600",
-      statusBg: "bg-red-100",
-      amount: "$3,200",
-      policy: "Home Insurance",
-      policyNumber: "HD29578423",
-      description: "Shingle damage from hailstorm",
-      documents: 5,
-      messages: 4,
-      progress: 100,
-      nextStep: "Claim denied. Appeal option available.",
-      timeline: [
-        { date: "Nov 05, 2022", event: "Claim submitted", complete: true },
-        { date: "Nov 06, 2022", event: "Documents uploaded", complete: true },
-        { date: "Nov 09, 2022", event: "Claims adjuster assigned", complete: true },
-        { date: "Nov 15, 2022", event: "Damage assessment", complete: true },
-        { date: "Nov 30, 2022", event: "Claim denied", complete: true }
-      ]
-    }
+        id: "C-006",
+        clientName: "Tatenda Mhere", // Zimbabwean Name
+        policyType: "Auto Insurance",
+        description: "Hit and run incident, significant damage to front. Police report filed.",
+        dateFiled: "2025-07-12",
+        status: "In Progress",
+        assignedAgent: "Jane Smith",
+        amountClaimed: "$7,500.00",
+        lastUpdated: "2025-07-17",
+        notes: "Vehicle inspection pending. Tracking police investigation.",
+        images: [ // Added images for Auto Insurance claim
+            "https://via.placeholder.com/300/FFA07A/FFFFFF?text=Car+Front+Damage",
+            "https://via.placeholder.com/300/DC143C/FFFFFF?text=Impact+Point",
+        ],
+      },
+      {
+        id: "C-007",
+        clientName: "Tanaka Banda", // Zimbabwean Name
+        policyType: "Health Insurance",
+        description: "Routine check-up and lab tests. All documentation in order.",
+        dateFiled: "2025-07-11",
+        status: "Approved",
+        assignedAgent: "Peter Jones",
+        amountClaimed: "$300.00",
+        lastUpdated: "2025-07-13",
+        notes: "Approved and reimbursed. No issues.",
+        images: [],
+      },
+      {
+        id: "C-008",
+        clientName: "Chengetai Gumbo", // Zimbabwean Name
+        policyType: "Home Insurance",
+        description: "Theft of electronics from home. Police case opened.",
+        dateFiled: "2025-07-09",
+        status: "Pending Review",
+        assignedAgent: "John Doe",
+        amountClaimed: "$4,000.00",
+        lastUpdated: "2025-07-16",
+        notes: "Require further documentation on proof of ownership for stolen items.",
+        images: [ // Added images for Home Insurance claim
+            "https://via.placeholder.com/300/8B4513/FFFFFF?text=Home+Entry+Point",
+            "https://via.placeholder.com/300/A0522D/FFFFFF?text=Missing+Items",
+        ],
+      },
   ]);
 
-  const activeClaims = claims.filter(claim => 
-    claim.status === "In Progress" || claim.status === "Under Review"
-  );
-  
-  const completedClaims = claims.filter(claim => 
-    claim.status === "Approved" || claim.status === "Completed" || claim.status === "Denied"
-  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
 
-  const handleViewDetails = (claim: Claim) => {
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "Approved":
+        return <CheckCircle className="w-4 h-4 text-green-500 mr-1" />;
+      case "Pending Review":
+        return <Clock className="w-4 h-4 text-yellow-500 mr-1" />;
+      case "In Progress":
+        return <Clock className="w-4 h-4 text-blue-500 mr-1" />;
+      case "Rejected":
+        return <XCircle className="w-4 h-4 text-red-500 mr-1" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "Approved":
+        return "bg-green-100 text-green-800";
+      case "Pending Review":
+        return "bg-yellow-100 text-yellow-800";
+      case "In Progress":
+        return "bg-blue-100 text-blue-800";
+      case "Rejected":
+        return "bg-red-100 text-red-800";
+      default:
+        return "";
+    }
+  };
+
+  const filteredClaims = claims.filter((claim) => {
+    const matchesSearch = claim.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          claim.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          claim.policyType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          claim.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          claim.assignedAgent.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === "All" || claim.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Function to open the claim details modal
+  const handleViewClaim = (claim) => {
     setSelectedClaim(claim);
-    setIsDetailsOpen(true);
+    setShowClaimDetailsModal(true);
   };
 
-
-
-  const handleSubmitNewClaim = (formData: NewClaimFormData) => {
-    if (!formData.title || !formData.policyType || !formData.amount || !formData.description) {
-      toast({
-        title: "Form Incomplete",
-        description: "Please fill out all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const newClaimId = `CLM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const today = new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
-    
-    const timeline: TimelineItem[] = [
-      { date: today, event: "Claim submitted", complete: true },
-      { date: "Pending", event: "Documents uploaded", complete: false },
-      { date: "Pending", event: "Claims adjuster assigned", complete: false },
-      { date: "Pending", event: "Damage assessment", complete: false },
-      { date: "Pending", event: "Payment processing", complete: false }
-    ];
-    
-    const newClaim: Claim = {
-      id: newClaimId,
-      title: formData.title,
-      date: today,
-      status: "In Progress",
-      statusColor: "text-yellow-600",
-      statusBg: "bg-yellow-100",
-      amount: `$${parseFloat(formData.amount).toLocaleString()}`,
-      policy: formData.policyType,
-      policyNumber: `${formData.policyType.substring(0, 2).toUpperCase()}${Math.floor(10000000 + Math.random() * 90000000)}`,
-      description: formData.description,
-      documents: 0,
-      messages: 0,
-      progress: 20,
-      nextStep: "Awaiting document upload",
-      timeline: timeline
-    };
-    
-    setClaims([newClaim, ...claims]);
-    
-    setNewClaimForm({
-      title: '',
-      policyType: '',
-      amount: '',
-      description: '',
-    });
-    setIsNewClaimOpen(false);
-    
-    toast({
-      title: "Claim Submitted",
-      description: `Your claim ${newClaimId} has been successfully submitted.`,
-    });
-
-    setTimeout(() => {
-      handleViewDetails(newClaim);
-    }, 500);
+  // Function to close the claim details modal
+  const handleCloseClaimDetailsModal = () => {
+    setShowClaimDetailsModal(false);
+    setSelectedClaim(null); // Clear selected claim when closing
   };
 
-  const handleUploadDocuments = (claimId: string) => {
-    toast({
-      title: "Document Upload",
-      description: "Document upload functionality would open here. This is a mock implementation.",
-    });
-    
-    setClaims(claims.map(claim => {
-      if (claim.id === claimId) {
-        const updatedTimeline = claim.timeline.map(item => {
-          if (item.event === "Documents uploaded" && !item.complete) {
-            return {
-              ...item,
-              date: new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}),
-              complete: true
-            };
-          }
-          return item;
-        });
-        
-        return {
-          ...claim,
-          documents: claim.documents + 1,
-          progress: Math.min(claim.progress + 20, 100),
-          timeline: updatedTimeline,
-          nextStep: claim.progress >= 80 ? "Finalizing claim approval" : "Under review by claims adjuster"
-        };
-      }
-      return claim;
-    }));
-
-    if (selectedClaim && selectedClaim.id === claimId) {
-      const updatedClaim = claims.find(c => c.id === claimId);
-      if (updatedClaim) {
-        setIsDetailsOpen(false);
-        setTimeout(() => {
-          setSelectedClaim(updatedClaim);
-          setIsDetailsOpen(true);
-        }, 300);
-      }
-    }
-  };
-
-  const handleContactAdjuster = (claimId: string) => {
-    toast({
-      title: "Contact Adjuster",
-      description: "Message form would open here. This is a mock implementation.",
-    });
-
-    setClaims(claims.map(claim => {
-      if (claim.id === claimId) {
-        return {
-          ...claim,
-          messages: claim.messages + 1
-        };
-      }
-      return claim;
-    }));
-    
-    if (selectedClaim && selectedClaim.id === claimId) {
-      const updatedClaim = claims.find(c => c.id === claimId);
-      if (updatedClaim) {
-        setSelectedClaim(updatedClaim);
-      }
-    }
-  };
-
-  const userData = localStorage.getItem("userData");
-  const user = userData ? JSON.parse(userData) : null;
-
-  const fetchClaimsStats = () => {
-    Server.getUserClaimsStats(user.email)
-      .then((response) => {
-        const claimsData = response.data;
-        setClaimStats(claimsData);
-        console.log(claimsData);
-      })
-      .catch((error) => {
-        console.log(error);
-      }
-    );
-  }
-
-  useEffect(() => {
-    fetchClaimsStats();
-  }, [])
   return (
     <>
       <Helmet>
-        <title>Claims Management - InsureHub</title>
-        <meta name="description" content="Manage and track your insurance claims easily with InsureHub's streamlined claims management system." />
+        <title>Process Claims - InsureHub</title>
+        <meta name="description" content="Manage and process all user insurance claims at InsureHub." />
       </Helmet>
-      
+
       <main className="min-h-screen flex flex-col">
         <Navbar />
-        
-        <div className="pt-24 pb-12 md:pt-32 md:pb-16 bg-gradient-to-br from-white to-insurance-neutral/50">
+
+        <div className="pt-24 pb-8 md:pt-32 md:pb-12 bg-gradient-to-br from-white to-insurance-neutral/50">
           <Container>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <ClaimHeader 
-                setIsNewClaimOpen={setIsNewClaimOpen}
-                setActiveTab={setActiveTab}
-                isNewClaimOpen={isNewClaimOpen}
-              />
-              
-              <ClaimStatusOverview 
-                pendingCount={claimStats.pendingClaims || 0}
-                completedCount={claimStats.completed_claims || 0}
-                totalCount={claimStats.total_claims || 0}
-                recentActivity={claims.reduce((count, claim) => count + claim.messages, 0)}
-              />
-            </div>
+            <FadeIn direction="up">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h1 className="heading-2 text-insurance-neutral-dark mb-2">
+                    Process User Claims
+                  </h1>
+                  <p className="text-gray-600">
+                    Efficiently manage and track all insurance claims.
+                  </p>
+                </div>
+                <div className="mt-4 md:mt-0 flex space-x-3">
+                  <button className="btn-primary flex items-center">
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    New Claim
+                  </button>
+                  <button className="btn-outline-primary flex items-center">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Export Claims
+                  </button>
+                </div>
+              </div>
+            </FadeIn>
           </Container>
         </div>
-        
-        <section className="py-12 bg-white">
+
+        <section className="py-8">
           <Container>
-            <ClaimList 
-              claims={claims}
-              activeClaims={activeClaims}
-              completedClaims={completedClaims}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              handleViewDetails={handleViewDetails}
-              handleUploadDocuments={handleUploadDocuments}
-              handleContactAdjuster={handleContactAdjuster}
-            />
+            <FadeIn direction="up" delay={200}>
+              <div className="glass-card rounded-xl p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                  <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search claims by client, ID, policy type, description, or agent..."
+                      className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 focus:ring-insurance-orange focus:border-insurance-orange outline-none transition-all duration-200"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-600 font-medium whitespace-nowrap">Filter by Status:</span>
+                    <select
+                      className="py-2 px-4 rounded-lg border border-gray-300 focus:ring-insurance-orange focus:border-insurance-orange outline-none transition-all duration-200"
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="Pending Review">Pending Review</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Rejected">Rejected</option>
+                    </select>
+                  </div>
+                </div>
+
+                {filteredClaims.length === 0 ? (
+                  <div className="text-center text-gray-500 py-10">
+                    <p className="text-lg font-medium mb-2">No claims found matching your criteria.</p>
+                    <p className="text-sm">Try adjusting your search or filters.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Claim ID</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy Type</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Filed</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Agent</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Claimed</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredClaims.map((claim) => (
+                          <tr key={claim.id} className="hover:bg-gray-50 transition-colors duration-150">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-insurance-neutral-dark">
+                              {claim.id}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex items-center">
+                                <User className="w-4 h-4 mr-2 text-gray-500" /> {claim.clientName}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {claim.policyType}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                                {claim.description}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {claim.dateFiled}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(claim.status)}`}>
+                                {getStatusIcon(claim.status)} {claim.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {claim.assignedAgent}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                                {claim.amountClaimed}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button
+                                    onClick={() => handleViewClaim(claim)} // Call view function
+                                    className="text-insurance-orange hover:text-insurance-orange-dark mr-3"
+                                >
+                                    View
+                                </button>
+                                <button className="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
+                                <button className="text-red-600 hover:text-red-800">Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </FadeIn>
           </Container>
         </section>
-        
-        <Dialog open={isNewClaimOpen} onOpenChange={setIsNewClaimOpen}>
-          <FileClaimForm 
-            onSubmit={handleSubmitNewClaim}
-            onCancel={() => setIsNewClaimOpen(false)}
-            initialValues={newClaimForm}
-          />
-        </Dialog>
-        
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <ClaimDetails 
-            claim={selectedClaim}
-            onClose={() => setIsDetailsOpen(false)}
-            onUploadDocuments={handleUploadDocuments}
-            onContactAdjuster={handleContactAdjuster}
-          />
-        </Dialog>
-        
-        <ProcessOverview />
-        
-        <ClaimStats />
-        
+
         <Footer />
+
+        {/* Claim Details Modal */}
+        {showClaimDetailsModal && (
+          <ClaimDetailsModal
+            claim={selectedClaim}
+            onClose={handleCloseClaimDetailsModal}
+          />
+        )}
       </main>
     </>
   );
 };
 
-export default ClaimsManagement;
+export default Claims;

@@ -116,8 +116,12 @@ const Navbar = () => {
           <div className="hidden md:block">
             {isAuthenticated ? (
               <div className="flex items-center space-x-3">
+
                 <Link to="/dashboard" className="btn-ghost">
                   Dashboard
+                </Link>
+                <Link to="/company/policy/claims" className="btn-ghost">
+                  Claims
                 </Link>
                 <button onClick={handleLogout} className="btn-primary">
                   Logout

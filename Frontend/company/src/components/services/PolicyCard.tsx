@@ -3,7 +3,7 @@ import { Home, Car, Heart, Shield } from "lucide-react"; // Import your icons
 const PolicyCard = ({ policies }) => {
   // Get appropriate icon based on policy type
   const getPolicyIcon = (policyType) => {
-    switch (policyType.toLowerCase()) {
+    switch (policyType) {
       case "home":
         return <Home className="w-6 h-6 text-insurance-orange" />;
       case "auto":

@@ -1,222 +1,335 @@
+// src/pages/admin/ManageUsers.jsx
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { InsuranceApplication } from '@/components/admin/users/types';
-import { 
-  Table, 
-  TableHeader, 
-  TableBody, 
-  TableRow, 
-  TableHead, 
-  TableCell 
-} from '@/components/ui/table';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { FileText, Filter, Trash2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Helmet } from 'react-helmet-async'; // Assuming you want Helmet here too
+import Container from '../../components/ui/Container'; // Assuming consistent container
+import FadeIn from '../../components/animations/FadeIn'; // Assuming consistent animation
+import { useToast } from '../../hooks/use-toast'; // Ensure this path is correct
+import { User as UserType } from '../../components/admin/users/types'; // Import the new User type
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell
+} from '../../components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Search, Filter, Trash2, UserPlus, Mail, Phone, CalendarDays, KeyRound, CheckCircle, XCircle } from 'lucide-react'; // Updated icons for users
+import { Input } from '../../components/ui/input';
 
-const ManageApplications = () => {
+const ManageUsers = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  
-  const [applications, setApplications] = useState<InsuranceApplication[]>([
+  const [roleFilter, setRoleFilter] = useState<string | null>(null); // Filter by user role
+  const [statusFilter, setStatusFilter] = useState<string | null>(null); // Filter by user status
+
+  const [users, setUsers] = useState<UserType[]>([
     {
-      id: 'app-001',
-      userId: '1',
-      userName: 'John Doe',
-      applicationType: 'Auto Insurance',
-      status: 'pending',
-      dateSubmitted: '2025-03-18',
-      coverage: 50000
+      id: 'usr-001',
+      name: 'John Doe',
+      email: 'john.doe@example.com',
+      role: 'client',
+      status: 'active',
+      joinedDate: '2024-01-05',
+      lastLogin: '2025-07-17',
     },
     {
-      id: 'app-002',
-      userId: '2',
-      userName: 'Jane Smith',
-      applicationType: 'Home Insurance',
-      status: 'approved',
-      dateSubmitted: '2025-03-12',
-      coverage: 250000
+      id: 'usr-002',
+      name: 'Jane Smith',
+      email: 'jane.smith@example.com',
+      role: 'agent',
+      status: 'active',
+      joinedDate: '2024-02-10',
+      lastLogin: '2025-07-16',
     },
     {
-      id: 'app-003',
-      userId: '3',
-      userName: 'Acme Inc',
-      applicationType: 'Business Insurance',
-      status: 'in-review',
-      dateSubmitted: '2025-03-08',
-      coverage: 1000000
+      id: 'usr-003',
+      name: 'Admin User',
+      email: 'admin@insurehub.com',
+      role: 'admin',
+      status: 'active',
+      joinedDate: '2023-11-20',
+      lastLogin: '2025-07-18',
     },
     {
-      id: 'app-004',
-      userId: '4',
-      userName: 'Bob Johnson',
-      applicationType: 'Life Insurance',
-      status: 'rejected',
-      dateSubmitted: '2025-03-01',
-      coverage: 500000
-    }
+      id: 'usr-004',
+      name: 'Bob Johnson',
+      email: 'bob.j@example.com',
+      role: 'client',
+      status: 'inactive', // Example inactive user
+      joinedDate: '2024-03-01',
+      lastLogin: '2024-06-01',
+    },
+    {
+      id: 'usr-005',
+      name: 'Alice Williams',
+      email: 'alice.w@example.com',
+      role: 'client',
+      status: 'pending', // Example pending user (e.g., awaiting email verification)
+      joinedDate: '2025-07-10',
+      lastLogin: '', // No login yet
+    },
   ]);
 
-  const filteredApplications = applications.filter(app => {
-    const matchesSearch = 
-      app.userName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      app.applicationType.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    const matchesStatus = !statusFilter || app.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+  const filteredUsers = users.filter(user => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.id.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesRole = !roleFilter || user.role === roleFilter;
+    const matchesStatus = !statusFilter || user.status === statusFilter;
+
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const handleStatusChange = (appId: string, newStatus: 'pending' | 'approved' | 'rejected' | 'in-review') => {
-    setApplications(applications.map(app => 
-      app.id === appId ? { ...app, status: newStatus } : app
+  const handleRoleChange = (userId: string, newRole: 'client' | 'agent' | 'admin') => {
+    setUsers(users.map(user =>
+      user.id === userId ? { ...user, role: newRole } : user
     ));
-    
+
     toast({
-      title: "Status updated",
-      description: `Application ${appId} status has been updated to ${newStatus}.`
+      title: "User Role Updated",
+      description: `User ${userId} role has been updated to ${newRole}.`,
+      variant: "success",
     });
   };
-  
-  const handleDeleteApplication = (appId: string) => {
-    setApplications(applications.filter(app => app.id !== appId));
-    
+
+  const handleStatusToggle = (userId: string, currentStatus: 'active' | 'inactive' | 'pending') => {
+    let newStatus: 'active' | 'inactive' | 'pending';
+    if (currentStatus === 'active') {
+      newStatus = 'inactive';
+    } else {
+      newStatus = 'active'; // Inactive or pending goes to active
+    }
+
+    setUsers(users.map(user =>
+      user.id === userId ? { ...user, status: newStatus } : user
+    ));
+
     toast({
-      title: "Application deleted",
-      description: `Application ${appId} has been deleted.`
+      title: "User Status Updated",
+      description: `User ${userId} is now ${newStatus}.`,
+      variant: "success",
+    });
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setUsers(users.filter(user => user.id !== userId));
+
+    toast({
+      title: "User Deleted",
+      description: `User ${userId} has been deleted.`,
+      variant: "destructive", // Use a destructive variant for deletion
     });
   };
 
   const getStatusBadgeColor = (status: string) => {
-    switch(status) {
-      case 'approved': return "bg-green-500";
-      case 'rejected': return "bg-red-500";
-      case 'in-review': return "bg-blue-500";
-      case 'pending': return "bg-yellow-500";
-      default: return "bg-gray-500";
+    switch (status) {
+      case 'active': return "bg-green-500 text-white";
+      case 'inactive': return "bg-red-500 text-white";
+      case 'pending': return "bg-yellow-500 text-white";
+      default: return "bg-gray-500 text-white";
+    }
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'admin': return "bg-purple-600 text-white";
+      case 'agent': return "bg-blue-500 text-white";
+      case 'client': return "bg-gray-700 text-white";
+      default: return "bg-gray-400 text-white";
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold mb-4">Insurance Applications</h2>
-        <p className="text-muted-foreground">
-          Review and process insurance applications submitted by users.
-        </p>
-      </div>
+    <>
+      <Helmet>
+        <title>Manage System Users - InsureHub Admin</title>
+        <meta
+          name="description"
+          content="Manage system users, their roles, and statuses on the InsureHub platform."
+        />
+      </Helmet>
 
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="relative flex-1">
-          <FileText className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search applications by name or type..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="w-full sm:w-48">
-          <Select
-            value={statusFilter || "all"}
-            onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
-          >
-            <SelectTrigger>
-              <div className="flex items-center">
-                <Filter className="mr-2 h-4 w-4" />
-                <span>{statusFilter || "Filter by status"}</span>
+      <div className="pt-4 pb-8 md:pt-6 md:pb-12">
+        <Container>
+          <FadeIn direction="up">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="heading-2 text-insurance-neutral-dark mb-2">
+                  Manage System Users
+                </h1>
+                <p className="text-gray-600">
+                  Oversee all users registered on InsureHub, manage their roles and access.
+                </p>
               </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="in-review">In Review</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+              <div className="mt-4 md:mt-0">
+                <Button className="btn-primary flex items-center">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add New User
+                </Button>
+              </div>
+            </div>
+          </FadeIn>
+        </Container>
       </div>
 
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Applicant</TableHead>
-              <TableHead>Insurance Type</TableHead>
-              <TableHead>Coverage</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredApplications.length > 0 ? (
-              filteredApplications.map(app => (
-                <TableRow key={app.id}>
-                  <TableCell className="font-mono">{app.id}</TableCell>
-                  <TableCell>{app.userName}</TableCell>
-                  <TableCell>{app.applicationType}</TableCell>
-                  <TableCell>${app.coverage.toLocaleString()}</TableCell>
-                  <TableCell>{app.dateSubmitted}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusBadgeColor(app.status)}>
-                      {app.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Select 
-                        defaultValue={app.status}
-                        onValueChange={(value) => handleStatusChange(
-                          app.id, 
-                          value as 'pending' | 'approved' | 'rejected' | 'in-review'
-                        )}
-                      >
-                        <SelectTrigger className="h-8 w-24">
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in-review">Review</SelectItem>
-                          <SelectItem value="approved">Approve</SelectItem>
-                          <SelectItem value="rejected">Reject</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleDeleteApplication(app.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                  No applications found matching your search criteria.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+      <section className="py-8">
+        <Container>
+          <FadeIn direction="up" delay={200}>
+            <div className="glass-card rounded-xl p-6">
+              <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search users by name, email, or ID..."
+                    className="pl-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Select
+                    value={roleFilter || "all"}
+                    onValueChange={(value) => setRoleFilter(value === "all" ? null : value)}
+                  >
+                    <SelectTrigger className="w-full sm:w-48">
+                      <div className="flex items-center">
+                        <Filter className="mr-2 h-4 w-4" />
+                        <span>{roleFilter ? `${roleFilter.charAt(0).toUpperCase() + roleFilter.slice(1)} Role` : "Filter by Role"}</span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="agent">Agent</SelectItem>
+                      <SelectItem value="client">Client</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={statusFilter || "all"}
+                    onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
+                  >
+                    <SelectTrigger className="w-full sm:w-48">
+                      <div className="flex items-center">
+                        <Filter className="mr-2 h-4 w-4" />
+                        <span>{statusFilter ? `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Status` : "Filter by Status"}</span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="border rounded-md overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead>Last Login</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.map(user => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-mono text-xs">{user.id}</TableCell>
+                          <TableCell className="font-medium text-insurance-neutral-dark">{user.name}</TableCell>
+                          <TableCell className="text-sm text-gray-600">{user.email}</TableCell>
+                          <TableCell>
+                            <Badge className={getRoleBadgeColor(user.role)}>
+                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusBadgeColor(user.status)}>
+                              {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-500">{user.joinedDate}</TableCell>
+                          <TableCell className="text-sm text-gray-500">{user.lastLogin || 'N/A'}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2 items-center">
+                              {/* Role Change Select */}
+                              <Select
+                                defaultValue={user.role}
+                                onValueChange={(value) => handleRoleChange(
+                                  user.id,
+                                  value as 'client' | 'agent' | 'admin'
+                                )}
+                              >
+                                <SelectTrigger className="h-8 w-28">
+                                  <SelectValue placeholder="Change Role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="client">Client</SelectItem>
+                                  <SelectItem value="agent">Agent</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {/* Status Toggle Button */}
+                              <Button
+                                variant={user.status === 'active' ? "outline" : "secondary"}
+                                size="icon"
+                                onClick={() => handleStatusToggle(user.id, user.status)}
+                                title={user.status === 'active' ? 'Deactivate User' : 'Activate User'}
+                                className={user.status === 'active' ? "text-red-500 border-red-500 hover:bg-red-50" : "text-green-500 border-green-500 hover:bg-green-50"}
+                              >
+                                {user.status === 'active' ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                              </Button>
+
+                              {/* Delete Button */}
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                onClick={() => handleDeleteUser(user.id)}
+                                title="Delete User"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
+                          No users found matching your search criteria.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </FadeIn>
+        </Container>
+      </section>
+    </>
   );
 };
 
-export default ManageApplications;
+export default ManageUsers;

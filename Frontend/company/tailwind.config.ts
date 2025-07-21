@@ -19,10 +19,13 @@ export default {
 			}
 		},
 		extend: {
-			fontFamily: {
-				sans: ['SF Pro Display', 'Inter', 'system-ui', 'sans-serif'],
-				serif: ['SF Pro Text', 'Georgia', 'serif'],
-			},
+			  fontFamily: {
+                // Poppins is now the primary sans-serif font
+                sans: ['Poppins', 'SF Pro Display', 'Inter', 'system-ui', 'sans-serif'],
+                serif: ['SF Pro Text', 'Georgia', 'serif'],
+                // You could also add a dedicated 'poppins' family if you prefer:
+                // poppins: ['Poppins', 'sans-serif'],
+            },
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

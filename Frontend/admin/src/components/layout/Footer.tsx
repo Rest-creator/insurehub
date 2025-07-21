@@ -42,7 +42,7 @@ const Footer = () => {
             <p className="text-gray-500 text-sm mb-4 md:mb-0">
               © {new Date().getFullYear()} InsureHub. All rights reserved.
             </p>
-            <p className="text-gray-500 text-sm">© REST > Universe</p>
+            <p className="text-gray-500 text-sm">© RESTK Solutions</p>
            
           </div>
         </div>
