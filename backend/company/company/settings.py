@@ -28,6 +28,22 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+# Email backend for password reset
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # For production
+# EMAIL_HOST = 'smtp.example.com'
+# EMAIL_PORT = 587
+# EMAIL_HOST_USER = 'your-email@example.com'
+# EMAIL_HOST_PASSWORD = 'your-email-password'
+# EMAIL_USE_TLS = True
+# DEFAULT_FROM_EMAIL = 'InsureHub <noreply@insurehub.com>'
+
+# Brute force protection config
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_ATTEMPTS_TIMEOUT = 900  # 15 minutes in seconds
+SIGNUP_MAX_ATTEMPTS = 5
+SIGNUP_ATTEMPTS_TIMEOUT = 900  # 15 minutes in seconds
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,8 +54,28 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'insurehubapp',
-    'corsheaders'
+    'corsheaders',
+    'rest_framework_simplejwt.token_blacklist',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'TOKEN_OBTAIN_SERIALIZER': 'insurehubapp.serializers.CustomTokenObtainPairSerializer',
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

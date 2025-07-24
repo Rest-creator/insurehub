@@ -15,32 +15,31 @@ const AuthGuard = ({ children, adminOnly = false }: AuthGuardProps) => {
   const location = useLocation();
   const { toast } = useToast();
 
+  // Helper to decode JWT and check expiry
+  function isTokenExpired(token: string): boolean {
+    try {
+      const [, payload] = token.split(".");
+      const decoded = JSON.parse(atob(payload));
+      if (!decoded.exp) return true;
+      // JWT exp is in seconds
+      return Date.now() / 1000 > decoded.exp;
+    } catch {
+      return true;
+    }
+  }
+
   useEffect(() => {
-    // In a real application, we would check for a valid auth token
-    // For demonstration purposes, we'll simulate authentication with localStorage
-    const checkAuth = () => {
-      const isAuth = localStorage.getItem('isAuthenticated') === 'true';
-      
-      // For demo purposes, always consider authenticated users as admins
-      // In a real app, you would check user roles from your auth system
-      const adminStatus = localStorage.getItem('isAdmin') === 'true';
-      
-      setIsAuthenticated(isAuth);
-      setIsAdmin(adminStatus);
+    const access = localStorage.getItem("access");
+    if (!access || isTokenExpired(access)) {
+      setIsAuthenticated(false);
+      setIsAdmin(false);
       setIsLoading(false);
-    };
-
-    checkAuth();
-  }, []);
-
-  // For the purpose of this demo, automatically consider users authenticated
-  // when accessing protected pages directly, so that you can see the content
-  useEffect(() => {
-    // This is just for the demo - in a real application, you would not do this
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('isAdmin', 'true');
+      return;
+    }
+    // Optionally check user role from token payload if needed
     setIsAuthenticated(true);
-    setIsAdmin(true);
+    // You can decode and set isAdmin here if you store role in JWT
+    setIsAdmin(true); // Default to true for now
     setIsLoading(false);
   }, []);
 

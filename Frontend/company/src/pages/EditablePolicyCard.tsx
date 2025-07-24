@@ -2,9 +2,25 @@
 import React, { useState } from "react";
 import { Edit, Trash2, Save, XCircle } from "lucide-react";
 
-const EditablePolicyCard = ({ policies, onUpdate, onDelete }) => {
-  const [editingId, setEditingId] = useState(null);
-  const [editedPolicy, setEditedPolicy] = useState({});
+interface Policy {
+  id: number | string;
+  type: string;
+  amount: number;
+  description?: string;
+  coverage?: number;  // Changed from string to number
+  due_date?: string;
+  status?: string;
+  clients?: number;
+  // Add other fields as needed
+}
+
+const EditablePolicyCard = ({ policies, onUpdate, onDelete }: {
+  policies: Policy[];
+  onUpdate: (policy: Policy) => void;
+  onDelete: (id: number | string) => void;
+}) => {
+  const [editingId, setEditingId] = useState<number | string | null>(null);
+  const [editedPolicy, setEditedPolicy] = useState<Partial<Policy>>({});
 
   const handleEditClick = (policy) => {
     setEditingId(policy.id);
@@ -12,7 +28,7 @@ const EditablePolicyCard = ({ policies, onUpdate, onDelete }) => {
   };
 
   const handleSaveClick = () => {
-    onUpdate(editedPolicy);
+    onUpdate(editedPolicy as Policy);
     setEditingId(null);
     setEditedPolicy({});
   };
@@ -22,9 +38,12 @@ const EditablePolicyCard = ({ policies, onUpdate, onDelete }) => {
     setEditedPolicy({});
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setEditedPolicy((prev) => ({ ...prev, [name]: value }));
+    // Convert to number if the field is a numeric field
+    const numericFields = ['coverage', 'amount', 'clients'];
+    const newValue = numericFields.includes(name) ? parseFloat(value) || 0 : value;
+    setEditedPolicy((prev) => ({ ...prev, [name]: newValue }));
   };
 
   return (
@@ -53,10 +72,10 @@ const EditablePolicyCard = ({ policies, onUpdate, onDelete }) => {
                 <div>
                   <label htmlFor={`amount-${policy.id}`} className="block text-xs font-medium text-gray-500">Amount</label>
                   <input
-                    type="text"
+                    type="number"
                     id={`amount-${policy.id}`}
                     name="amount"
-                    value={editedPolicy.amount || ''}
+                    value={editedPolicy.amount !== undefined && editedPolicy.amount !== null ? editedPolicy.amount : ''}
                     onChange={handleChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
                   />
@@ -75,10 +94,11 @@ const EditablePolicyCard = ({ policies, onUpdate, onDelete }) => {
                 <div>
                   <label htmlFor={`coverage-${policy.id}`} className="block text-xs font-medium text-gray-500">Coverage</label>
                   <input
-                    type="text"
+                    type="number"
                     id={`coverage-${policy.id}`}
                     name="coverage"
-                    value={editedPolicy.coverage || ''}
+                    value={editedPolicy.coverage !== undefined && editedPolicy.coverage !== null ? editedPolicy.coverage : ''}
+
                     onChange={handleChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
                   />

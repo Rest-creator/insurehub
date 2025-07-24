@@ -22,11 +22,20 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Mimic successful login by storing dummy user data
-      setTimeout(() => {
+      const response = await fetch("http://localhost:8000/company/login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem("access", data.token);
+        localStorage.setItem("refresh", data.refresh_token);
         toast.success("Logged in successfully!");
         navigate("/dashboard");
-      }, 3000);
+      } else {
+        toast.error(data.detail || data.message || "Login failed. Please check your credentials.");
+      }
     } catch (error) {
       console.error("Login error:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -34,6 +43,7 @@ const Login = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <>

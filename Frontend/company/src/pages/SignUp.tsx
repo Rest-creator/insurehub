@@ -83,41 +83,47 @@ const SignUp = () => {
       return;
     }
 
-    // Prepare submission data
+    // Prepare data for backend API
     const submissionData = {
-      ...formData,
-      status: "pending_review", // Set initial status
-      // Add a timestamp for when it was registered
-      registeredAt: new Date().toISOString(),
+      email: formData.companyEmail,
+      password: formData.password,
+      first_name: formData.contactPerson || formData.companyName || "",
+      last_name: formData.companyName || "Company",
+      company_name: formData.companyName,
+      contact_person: formData.contactPerson,
+      contact_phonenumber: formData.phoneNumber,
+      company_website: formData.website,
+      company_type: formData.companyType,
+      company_registration_number: formData.registrationNumber,
+      year_founded: formData.yearFounded,
+      tax_identification_number: formData.taxId,
+      insurance_license_number: formData.insuranceLicenseNumber,
+      regulatory_body: formData.regulatoryBody,
+      employees_range: formData.numberOfEmployees,
+      country: formData.country,
+      company_address: formData.address,
+      company_description: formData.description,
+      company_code: "", // Optional or generate as needed
     };
 
-    console.log(
-      "Attempting to save company registration to IndexedDB:",
-      submissionData
-    );
-
     try {
-      // Check if a company with this email already exists
-      const existingCompany = await IndexedDB.getCompanyRegistration(
-        submissionData.companyEmail
-      );
-      if (existingCompany) {
-        setLoading(false);
-        toast.error("A company with this email is already registered.");
-        return;
+      const response = await fetch("http://localhost:8000/company/signup/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(submissionData),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success(data.detail || data.message || "Registration successful");
+        setTimeout(() => {
+          navigate("/"); // Navigate to home or a success page
+        }, 3000);
+      } else {
+        toast.error(data.detail || data.message || data.error || "Error during registration. Please check your details.");
       }
-
-      await IndexedDB.addCompanyRegistration(submissionData);
-      console.log("Company registration saved to IndexedDB.");
-      toast.success(
-        "Your company registration has been submitted and saved locally for review. We'll contact you once your application is approved."
-      );
-      setTimeout(() => {
-        navigate("/"); // Navigate to home or a success page
-      }, 3000);
     } catch (error) {
-      console.error("Error saving company registration to IndexedDB:", error);
-      toast.error("An error occurred while saving your registration locally.");
+      console.error("Error registering company:", error);
+      toast.error("An error occurred while submitting your registration.");
     } finally {
       setLoading(false);
     }

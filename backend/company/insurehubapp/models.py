@@ -32,7 +32,7 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class User(AbstractUser):
-    """Custom user model that uses email as the primary identifier"""
+    """Custom user model that uses email as the primary identifier and supports admin, company, and individual roles."""
     username = None
     email = models.EmailField(_('email address'), unique=True)
     
@@ -79,16 +79,22 @@ class User(AbstractUser):
         default='pending'
     )
     
-    objects = UserManager()
-    
+    # Common fields for all users
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    date_joined = models.DateTimeField(default=timezone.now)
+
+    REQUIRED_FIELDS = ['first_name', 'last_name']
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+
+    objects = UserManager()
     
     def __str__(self):
         return self.email
 
 class CompanyProfile(models.Model):
-    """Extended profile for insurance companies"""
+    """Extended profile for insurance companies, mapped from frontend signup fields."""
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -132,8 +138,8 @@ class CompanyProfile(models.Model):
     )
     country = models.CharField(max_length=100)
     company_address = models.TextField()
-    company_description = models.TextField()
-    company_code = models.CharField()
+    company_description = models.TextField(blank=True, null=True)
+    company_code = models.CharField(max_length=100, blank=True, null=True)
     
     # Additional fields for tracking
     date_created = models.DateTimeField(auto_now_add=True)
@@ -145,3 +151,23 @@ class CompanyProfile(models.Model):
     class Meta:
         verbose_name = "Company Profile"
         verbose_name_plural = "Company Profiles"
+
+class AdminProfile(models.Model):
+    """Extended profile for administrators."""
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='admin_profile',
+        limit_choices_to={'user_type': 'admin'}
+    )
+    
+    # Additional fields for administrators
+    admin_title = models.CharField(max_length=100)
+    admin_department = models.CharField(max_length=100)
+    
+    # Additional fields for tracking
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.email} (Admin)"
