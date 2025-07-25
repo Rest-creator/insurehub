@@ -16,5 +16,8 @@
     "url": "https://github.com/Rest-creator/insurehub/issues"
   },
   "homepage": "https://github.com/Rest-creator/insurehub#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "react-router-dom": "^7.7.1"
+  }
 }
